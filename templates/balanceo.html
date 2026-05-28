@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Balanceo de Línea con RPW</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  </head>
+  <body>
+    <main>
+      <h1>Balanceo de Línea con RPW</h1>
+      <section class="card">
+        <form method="post" class="form-grid">
+          <label>
+            Tiempo de ciclo deseado (horas):
+            <input
+              type="number"
+              name="cycle_time"
+              min="1"
+              value="{{ request_form.get('cycle_time', '') }}"
+              required
+            />
+          </label>
+
+          <div class="table-wrapper">
+            <table class="input-table">
+              <thead>
+                <tr>
+                  <th>Tarea</th>
+                  <th>Tiempo (h)</th>
+                  <th>Precedencias</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for label in task_labels %}
+                <tr>
+                  <td>{{ label }}</td>
+                  <td>
+                    <input
+                      type="number"
+                      name="time_{{ loop.index0 }}"
+                      min="1"
+                      value="{{ request_form.get('time_' ~ i, '') }}"
+                      required
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="text"
+                      name="pred_{{ loop.index0 }}"
+                      placeholder="1,2"
+                      value="{{ request_form.get('pred_' ~ loop.index0, '') }}"
+                    />
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+          <p class="hint">
+            Indique las precedencias con números de tareas separados por comas. Ejemplo:
+            para que T3 dependa de T1 y T2, escriba <strong>1,2</strong>.
+          </p>
+
+          <button type="submit">Calcular balanceo</button>
+        </form>
+      </section>
+
+      {% if error %}
+      <section class="alert alert-error">{{ error }}</section>
+      {% endif %}
+
+      {% if result %}
+      <section class="summary">
+        <h2>Resultado</h2>
+        <p>Tiempo de ciclo: <strong>{{ result.cycle_time }} h</strong></p>
+        <p>Estaciones necesarias: <strong>{{ result.stations }}</strong></p>
+        <p>Tiempo total de tarea: <strong>{{ result.total_time }} h</strong></p>
+        <p>Tiempo ocioso total: <strong>{{ result.total_idle }} h</strong></p>
+      </section>
+
+      <section class="card">
+        <h3>Asignación por estación</h3>
+        <div class="table-wrapper">
+          <table class="result-table">
+            <thead>
+              <tr>
+                <th>Estación</th>
+                <th>Tareas</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for station in result.station_tasks %}
+              <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ station | join(', ') }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card">
+        <h3>Lista de tareas y RPW</h3>
+        <div class="table-wrapper">
+          <table class="result-table">
+            <thead>
+              <tr>
+                <th>Tarea</th>
+                <th>Tiempo</th>
+                <th>RPW</th>
+                <th>Precedencias</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for task in result.task_details %}
+              <tr>
+                <td>{{ task.label }}</td>
+                <td>{{ task.time }} h</td>
+                <td>{{ task.rpw }} h</td>
+                <td>{{ task.predecessors }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </section>
+      {% endif %}
+    </main>
+  </body>
+</html>
